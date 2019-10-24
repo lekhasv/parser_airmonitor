@@ -35,7 +35,7 @@ def loadConfig(path,radio,chas,data):
 
     if namespace.analysis:
         err = analysis(log,radio)
-        print(err)
+        #print(err)
     else:     
         print(log)
         if not os.path.exists(config["Setting"]["save_path"]+nf):
