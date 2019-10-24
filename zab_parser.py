@@ -2,48 +2,93 @@ import datetime
 import configparser
 import os
 import sys
+import argparse
 
 def loadConfig(path,radio,chas,data):
-    if not os.path.exists(path):
-        print("не верный путь.")
-        exit()
-    config = configparser.ConfigParser()
-    config.read(path, encoding='UTF-8')
+
     now = datetime.datetime.now()
-    if data == 0:
+    hh = 0 
+    log = ""
+    if data == '0':
         name_file = now.strftime("%Y-%m-%d")+".txt"
     else:
         name_file = data+".txt"
-    hh = 0    
+       
     if chas == "now":
         chas = now.strftime("%H")
     elif chas == "0":
         hh = 1
-    #print(chas)    
-    
+
+    if radio == "":
+        nf = ""
+    else:
+        nf = radio+"\\"
+            
+           
     for key in config["radio"]:
         if hh == 1:
             chas = config[key]["time"]
         if radio == "" and config["radio"][key] == "1":
-            parser_log(config[key]["path_dir"],chas,config["Setting"]["save_path"],config[key]["name"],name_file)
+            log += parser_log(config[key]["path_dir"],chas,config[key]["name"],name_file)
         elif key == radio:
-            parser_log(config[key]["path_dir"],chas,config["Setting"]["save_path"],config[key]["name"],name_file)
+            log += parser_log(config[key]["path_dir"],chas,config[key]["name"],name_file)
 
-def parser_log(path_dir, period, save_path,radio,file_name):
+    if namespace.analysis:
+        err = analysis(log,radio)
+        print(err)
+    else:     
+        print(log)
+        if not os.path.exists(config["Setting"]["save_path"]+nf):
+            os.makedirs(config["Setting"]["save_path"]+nf)        
+        fs = open(config["Setting"]["save_path"]+nf+name_file, "w", encoding='utf-8')
+        fs.write(log)
+        fs.close()              
 
+def analysis(log,radio):
+    obraz = []
+    exobraz = []
+    ok = 0
+    err = 0
+    samp = config[radio]["sample"]
+    
+    for key in config[samp]:
+        if key[:4] == 'incl':
+            obraz.append(config[samp][key])
+        elif key[:4] == 'excl':
+            exobraz.append(config[samp][key])
+
+    log = log.rstrip('\r')
+    list_log = log.split("\n")
+    #print(list_log)
+    for st in list_log:
+        for obr in obraz:
+            if st.find(obr) != -1:
+                ok += 1
+        for exobr in exobraz:
+            if st.find(exobr) != -1:
+                err += 1        
+
+            
+    return '{"OK": '+str(ok)+', "ERR": '+str(err)+'}'
+
+def parser_log(path_dir, period, radio, file_name):
+    period = period.replace("-",",")
     pr = period.split(",")
     name_file = file_name
-    txt_log = radio+"\n"
+    if not namespace.noname:
+        txt_log = radio+"\n"
+    else:
+        txt_log = ""
     prev_str_time = ""
     prev_str_time_1 = ""
     
     try:
         f = open(path_dir+name_file, "r", encoding='utf-8')
     except:
-        exit()
+        return ""
     for line in f.readlines():
         line = line.rstrip('\r\n')   
-        if (line.find("Опознан") != -1):
+        if line.find("Опознан") != -1:
             
             hour_period = False
             for hr in pr:                
@@ -58,34 +103,40 @@ def parser_log(path_dir, period, save_path,radio,file_name):
                     prev_str_time_1  = line[11:14]+str(int(line[14:16])+1)
                     prev_str_time = str_time
                     
-    print (txt_log)
-    txt_log += "\n"                
-    fs = open(save_path+name_file, "a", encoding='utf-8')
-    fs.write(txt_log)
-    fs.close()    
+    txt_log += "\n"
+    return txt_log
+  
+def createParser ():
+    parser = argparse.ArgumentParser()
+    parser.add_argument ('-r', '--radio', default='', help='Название радио как в конфиге')
+    parser.add_argument ('-c', '--chas', default='0', help='Часы, которые необходимо проверить. Пример: 07,08')
+    parser.add_argument ('-d', '--data', default='0', help='Дата в формате гггг-мм-дд')
+    parser.add_argument ('-n', '--noname', action='store_true', default=False, help='Не добавлять название радио в лог')
+    parser.add_argument ('-a', '--analysis', action='store_true', default=False, help='Анализ лога')
+    parser.add_argument ('-s', '--show', action='store_true', default=False, help='Показать названия радио в конфиге')
+
+    return parser
                     
 
 if __name__ == "__main__":
+    parser = createParser()
+    namespace = parser.parse_args()
 
-    if len(sys.argv) > 3:
-        radio = sys.argv[1]
-        chas = sys.argv[2]
-        data = sys.argv[3]
-    elif len(sys.argv) > 2:
-        radio = sys.argv[1]
-        chas = sys.argv[2]
-        data = 0
-    elif len(sys.argv) > 1:
-        radio = sys.argv[1]
-        chas = "0"
-        data = 0
-    else:
-        radio = ""
-        chas = "0"
-        data = 0
-
-    pathname = os.path.dirname(sys.argv[0])          
+    pathname = os.path.dirname(sys.argv[0]) +'\\'          
    
-    name_config = pathname + "\\settings.ini" #D:\\Обмен\\logger\\
-    loadConfig(name_config,radio,chas,data)    
-    #exit()
+    name_config = pathname + "settings.ini" #D:\\Обмен\\logger\\
+
+    if not os.path.exists(name_config):
+        print("не верный путь.")
+        exit()
+        
+    config = configparser.ConfigParser()
+    config.read(name_config, encoding='UTF-8')
+    
+    if namespace.show:
+        for key in config["radio"]:
+            print(key)
+        exit()
+    
+    loadConfig(name_config,namespace.radio,namespace.chas,namespace.data)
+    exit()
