@@ -106,7 +106,7 @@ def parser_log(path_dir, period, radio, file_name):
                 if (prev_str_time != str_time)&(prev_str_time_1 != str_time):            
                     pos_end = line.find(", Ошибок")                   
                     txt_log += line[11:16]+" "+ line[29:pos_end]+"\n"
-                    prev_str_time_1  = line[11:14]+"{0:02d}".format(int(line[14:16])+1)     #+str(int(line[14:16])+1)
+                    prev_str_time_1  = line[11:14]+"{0:02d}".format(int(line[14:16])+1)
                     print("prev: "+ prev_str_time_1);
                     prev_str_time = str_time
                     print("tek: "+ prev_str_time);
