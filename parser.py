@@ -20,7 +20,7 @@ def loadConfig(path,radio,chas,data):
         hh = 1
 
     if radio == "":
-        nf = ""
+        nf = now.strftime("%Y-%m")+"\\"
     else:
         nf = radio+"\\"
             
@@ -125,6 +125,7 @@ def createParser ():
     parser.add_argument ('-r', '--radio', default='', help='Название радио как в конфиге')
     parser.add_argument ('-c', '--chas', default='0', help='Часы, которые необходимо проверить. Пример: 07,08')
     parser.add_argument ('-d', '--data', default='0', help='Дата в формате гггг-мм-дд')
+    parser.add_argument ('-p', '--space', default='0', help='Любое значение')
     parser.add_argument ('-n', '--noname', action='store_true', default=False, help='Не добавлять название радио в лог')
     parser.add_argument ('-a', '--analysis', action='store_true', default=False, help='Анализ лога')
     parser.add_argument ('-s', '--show', action='store_true', default=False, help='Показать названия радио в конфиге')
